@@ -1,6 +1,6 @@
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, session
 import random
+from flask import Flask, render_template, request, jsonify, session
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -8,21 +8,20 @@ app = Flask(
     __name__,
     template_folder=str(BASE_DIR / "template"),
     static_folder=str(BASE_DIR / "template" / "static"),
-    static_url_path="/static"
+    static_url_path="/static",
 )
 app.secret_key = "rock_paper_scissors_secret"
 
-choices = ["rock", "paper", "scissors"]
+CHOICES = ["rock", "paper", "scissors"]
 
-pictures = {
+PICTURES = {
     "rock": "✊",
     "paper": "✋",
-    "scissors": "✌️"
+    "scissors": "✌️",
 }
 
 
-# Reset scores
-def reset_scores():
+def reset_scores() -> None:
     session["player1_score"] = 0
     session["player2_score"] = 0
     session["computer_score"] = 0
@@ -30,45 +29,50 @@ def reset_scores():
     session["round"] = 0
 
 
-def ensure_scores():
-    if "round" not in session:
+def ensure_scores() -> None:
+    required_keys = (
+        "player1_score",
+        "player2_score",
+        "computer_score",
+        "draws",
+        "round",
+    )
+    if any(key not in session for key in required_keys):
         reset_scores()
 
 
-# Home page
+def normalize_choice(value: object) -> str:
+    return value.strip().lower() if isinstance(value, str) else ""
+
+
 @app.route("/")
 def home():
     reset_scores()
     return render_template("index.html")
 
 
-# Game logic
 @app.route("/play", methods=["POST"])
 def play():
     ensure_scores()
 
     data = request.get_json(silent=True)
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({"error": "Invalid JSON request"}), 400
 
     mode = data.get("mode")
-    player1_value = data.get("player1")
-    player1 = player1_value.lower() if isinstance(player1_value, str) else ""
+    player1 = normalize_choice(data.get("player1"))
 
-    if player1 not in choices:
-        return jsonify({"error": "Invalid choice"}), 400
+    if player1 not in CHOICES:
+        return jsonify({"error": "Invalid choice for Player 1"}), 400
 
     if mode == "two":
-        player2_value = data.get("player2")
-        player2 = player2_value.lower() if isinstance(player2_value, str) else ""
-
-        if player2 not in choices:
-            return jsonify({"error": "Invalid choice"}), 400
-
+        player2 = normalize_choice(data.get("player2"))
+        if player2 not in CHOICES:
+            return jsonify({"error": "Invalid choice for Player 2"}), 400
         opponent_name = "Player 2"
 
     elif mode == "computer":
-        player2 = random.choice(choices)
+        player2 = random.choice(CHOICES)
         opponent_name = "Computer"
 
     else:
@@ -76,23 +80,22 @@ def play():
 
     session["round"] += 1
 
-    # Compare choices
     if player1 == player2:
         result = "It's a Draw! 🤝"
         winner = "draw"
         session["draws"] += 1
 
     elif (
-        (player1 == "rock" and player2 == "scissors") or
-        (player1 == "paper" and player2 == "rock") or
-        (player1 == "scissors" and player2 == "paper")
+        (player1 == "rock" and player2 == "scissors")
+        or (player1 == "paper" and player2 == "rock")
+        or (player1 == "scissors" and player2 == "paper")
     ):
         result = "Player 1 Wins! 🎉"
         winner = "player1"
         session["player1_score"] += 1
 
     else:
-        result = opponent_name + " Wins! 🏆"
+        result = f"{opponent_name} Wins! 🏆"
         winner = "opponent"
 
         if mode == "two":
@@ -101,8 +104,8 @@ def play():
             session["computer_score"] += 1
 
     return jsonify({
-        "player1": pictures[player1],
-        "player2": pictures[player2],
+        "player1": PICTURES[player1],
+        "player2": PICTURES[player2],
         "opponent_name": opponent_name,
         "result": result,
         "winner": winner,
@@ -110,11 +113,10 @@ def play():
         "player2_score": session["player2_score"],
         "computer_score": session["computer_score"],
         "draws": session["draws"],
-        "round": session["round"]
+        "round": session["round"],
     })
 
 
-# Restart game
 @app.route("/restart", methods=["POST"])
 def restart():
     reset_scores()
