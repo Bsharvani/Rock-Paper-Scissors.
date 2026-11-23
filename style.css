@@ -1,3 +1,6 @@
+* {
+    box-sizing: border-box;
+}
 
 body {
     margin: 0;
@@ -6,6 +9,7 @@ body {
     font-family: Arial, sans-serif;
     background: linear-gradient(120deg, #667eea, #764ba2);
     color: white;
+    min-height: 100vh;
 }
 
 /* Loading screen */
@@ -31,7 +35,10 @@ body {
 }
 
 @keyframes spin {
-    100% {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
         transform: rotate(360deg);
     }
 }
@@ -60,14 +67,14 @@ body {
 }
 
 .score-card {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     padding: 10px 25px;
     border-radius: 15px;
     min-width: 120px;
 }
 
 .player {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
     padding: 20px;
     margin: 20px auto;
     max-width: 650px;
@@ -78,16 +85,23 @@ button {
     padding: 15px 20px;
     margin: 10px;
     font-size: 20px;
+    background: white;
+    color: #172554;
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    transition: 0.3s;
+    transition: transform 0.25s ease, background-color 0.25s ease, color 0.25s ease;
 }
 
-button:hover {
+button:hover:not(:disabled) {
     background: orange;
     color: white;
     transform: scale(1.08);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 #result {
@@ -101,7 +115,6 @@ button:hover {
 }
 
 @media (max-width: 600px) {
-
     body {
         padding: 10px;
     }
@@ -115,4 +128,7 @@ button:hover {
         min-width: 80px;
     }
 
+    #result {
+        font-size: 24px;
+    }
 }
